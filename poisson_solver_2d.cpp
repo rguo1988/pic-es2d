@@ -12,70 +12,214 @@
 
 using namespace Eigen;
 
-PoissonSolver2D_DirichletBC::PoissonSolver2D_DirichletBC(int _nx_grids, double _dx, int _ny_grids, double _dy, VectorXd _phi_0k, VectorXd _phi_j0, VectorXd _phi_n1k, VectorXd _phi_jn1):
-    nx_grids(_nx_grids), dx(_dx), ny_grids(_ny_grids), dy(_dy), Lx(_nx_grids * dx), Ly(_ny_grids * dy), phi_0k(_phi_0k), phi_j0(_phi_j0), phi_n1k(_phi_n1k), phi_jn1(_phi_jn1)
+//Dirichlet Boundary Condition
+PoissonSolver2D_DirichletBC::PoissonSolver2D_DirichletBC(int _nx, double _dx, int _ny, double _dy, VectorXd _phi_0k, VectorXd _phi_j0, VectorXd _phi_n1k, VectorXd _phi_jn1):
+    nx(_nx), dx(_dx), ny(_ny), dy(_dy), Lx(_nx * _dx), Ly(_ny * _dy),
+    phi_0k(_phi_0k), phi_j0(_phi_j0), phi_n1k(_phi_n1k), phi_jn1(_phi_jn1),
+    dx2(_dx * _dx), dy2(_dy * _dy)
 {
-    phi.resize(nx_grids, ny_grids);
-    Ex.resize(nx_grids, ny_grids);
-    Ey.resize(nx_grids, ny_grids);
+    phi.resize(nx, ny);
+    Ex.resize(nx, ny);
+    Ey.resize(nx, ny);
     phi.row(0) = _phi_0k;
     phi.col(0) = _phi_j0;
-    phi.row(nx_grids - 1) = _phi_n1k;
-    phi.col(ny_grids - 1) = _phi_jn1;
+    phi.row(nx - 1) = _phi_n1k;
+    phi.col(ny - 1) = _phi_jn1;
 
-    //construct oprator A
-    double dx2 = dx * dx;
-    double dy2 = dy * dy;
+    /*********** construct oprator A (dx=dy=1) ************
+    B =  4 -1  0  0     C = -1  0  0  0     A =  B  C  0  0
+        -1  4 -1  0          0 -1  0  0          C  B  C  0
+         0 -1  4 -1          0  0 -1  0          0  C  B  C
+         0  0 -1  4          0  0  0 -1          0  0  C  B
+    *******************************************************/
 
-    B.resize(nx_grids - 2, ny_grids - 2);
+    B.resize(nx - 2, nx - 2);
     B.setZero();
-    B.diagonal() = VectorXd::Constant(nx_grids - 2, 2.0 / dx2 + 2.0 / dy2);
-    B.diagonal(1) = VectorXd::Constant(nx_grids - 3,  -1.0 / dx2);
-    B.diagonal(-1) = VectorXd::Constant(nx_grids - 3, -1.0 / dx2);
+    B.diagonal() = VectorXd::Constant(nx - 2, 2.0 / dx2 + 2.0 / dy2);
+    B.diagonal(1) = VectorXd::Constant(nx - 3,  -1.0 / dx2);
+    B.diagonal(-1) = VectorXd::Constant(nx - 3, -1.0 / dx2);
 
-    C.resize(nx_grids - 2, ny_grids - 2);
-    C = MatrixXd::Identity(nx_grids - 2, ny_grids - 2) / dy2;
+    C.resize(nx - 2, nx - 2);
+    C = -1.0 * MatrixXd::Identity(nx - 2, nx - 2) / dy2;
 
-    A.resize((nx_grids - 2) * (ny_grids - 2), (nx_grids - 2) * (ny_grids - 2));
-    for(int i = 0; i < nx_grids - 2; i++)
+    A.resize((nx - 2) * (ny - 2), (nx - 2) * (ny - 2));
+    A.setZero();
+    for(int i = 0; i < ny - 2; i++)
     {
-        int idx = i * (nx_grids - 2);
-        A.block(idx, idx, nx_grids - 2, nx_grids - 2) = B;
-        if(i < nx_grids - 3)
+        int idx = i * (nx - 2);
+        A.block(idx, idx, nx - 2, nx - 2) = B;
+        if(i != ny - 3)
         {
-            A.block(idx + nx_grids - 2, idx, nx_grids - 2, nx_grids - 2) = -C;
-            A.block(idx, idx + nx_grids - 2, nx_grids - 2, nx_grids - 2) = -C;
+            A.block(idx + nx - 2, idx, nx - 2, nx - 2) = C;
+            A.block(idx, idx + nx - 2, nx - 2, nx - 2) = C;
         }
     }
 }
 
 void PoissonSolver2D_DirichletBC::Solve(MatrixXd charge)
 {
-    double dx2 = dx * dx;
-    double dy2 = dy * dy;
+    MatrixXd charge_modified = charge.block(1, 1, nx - 2, ny - 2);
+    charge_modified.row(0) += phi.row(0).segment(1, ny - 2) / dx2;
+    charge_modified.row(nx - 3) += phi.row(nx - 1).segment(1, ny - 2) / dx2;
+    charge_modified.col(0) += phi.col(0).segment(1, nx - 2) / dy2;
+    charge_modified.col(ny - 3) += phi.col(ny - 1).segment(1, nx - 2) / dy2;
 
-    MatrixXd charge_modified = charge.block(1, 1, nx_grids - 2, ny_grids - 2);
-    charge_modified.row(0) += phi.row(0).segment(1, nx_grids - 2) / dx2;
-    charge_modified.row(nx_grids - 3) += phi.row(nx_grids - 1).segment(1, nx_grids - 2) / dx2;
-    charge_modified.col(0) += phi.col(0).segment(1, nx_grids - 2) / dy2;
-    charge_modified.col(ny_grids - 3) += phi.col(ny_grids - 1).segment(1, nx_grids - 2) / dy2;
+    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    //VectorXd phi_vec = A.householderQr().solve(charge_modified.reshaped());
+    //VectorXd phi_vec = A.fullPivLu().solve(charge_modified.reshaped());
+    phi.block(1, 1, nx - 2, ny - 2) = phi_vec.reshaped(nx - 2, ny - 2).eval();
 
-    VectorXd phi_vec = A.fullPivLu().solve(charge_modified.reshaped());
-    phi.block(1, 1, nx_grids - 2, ny_grids - 2) = phi_vec.reshaped(nx_grids - 2, ny_grids - 2).eval();
+    //Calculate E
+    #pragma omp parallel for
+    for(int x_idx = 0; x_idx < nx; x_idx++)
+    {
+        for(int y_idx = 0; y_idx < ny; y_idx++)
+        {
+            int x_idx_p = (x_idx == nx - 1) ? x_idx : x_idx + 1;
+            int x_idx_m = (x_idx == 0) ? x_idx : x_idx - 1;
+            int y_idx_p = (y_idx == ny - 1) ? y_idx : y_idx + 1;
+            int y_idx_m = (y_idx == 0) ? y_idx : y_idx - 1;
+            Ex(x_idx, y_idx) = (phi(x_idx_m, y_idx) - phi(x_idx_p, y_idx)) / 2.0 / dx;
+            Ey(x_idx, y_idx) = (phi(x_idx, y_idx_m) - phi(x_idx, y_idx_p)) / 2.0 / dy;
+        }
+    }
 }
 
-double PoissonSolver2D_DirichletBC::GetEx(int x_idx, int y_idx)
+//Periodic Boundary Condition
+PoissonSolver2D_PeriodicBC::PoissonSolver2D_PeriodicBC(int _nx, double _dx, int _ny, double _dy):
+    nx(_nx), dx(_dx), ny(_ny), dy(_dy), Lx(_nx * _dx), Ly(_ny * _dy),
+    dx2(_dx * _dx), dy2(_dy * _dy)
 {
-    int x_idx_p = (x_idx + 1 > nx_grids - 1) ? x_idx : x_idx + 1;
-    int x_idx_m = (x_idx - 1 < 0) ? x_idx : x_idx - 1;
-    double Ex = (phi(x_idx_p, y_idx) - phi(x_idx_m, y_idx)) / 2.0 / dx;
-    return Ex;
+    phi.resize(nx, ny);
+    Ex.resize(nx, ny);
+    Ey.resize(nx, ny);
+
+    /*********** construct oprator A (dx=dy=1) ************
+    B =  4 -1  0 -1     C = -1  0  0  0     A =  B  C  0  C
+        -1  4 -1  0          0 -1  0  0          C  B  C  0
+         0 -1  4 -1          0  0 -1  0          0  C  B  C
+        -1  0 -1  4          0  0  0 -1          C  0  C  B
+    *******************************************************/
+
+    B.resize(nx - 1, nx - 1);
+    B.setZero();
+    B.diagonal() = VectorXd::Constant(nx - 1, 2.0 / dx2 + 2.0 / dy2);
+    B.diagonal(1) = VectorXd::Constant(nx - 2,  -1.0 / dx2);
+    B.diagonal(-1) = VectorXd::Constant(nx - 2, -1.0 / dx2);
+    B(0, nx - 2) = -1.0 / dx2;
+    B(nx - 2, 0) = -1.0 / dx2;
+
+    C.resize(nx - 1, nx - 1);
+    C = -1.0 * MatrixXd::Identity(nx - 1, nx - 1) / dy2;
+
+    A.resize((nx - 1) * (ny - 1), (nx - 1) * (ny - 1));
+    A.setZero();
+    for(int i = 0; i < ny - 1; i++)
+    {
+        int idx = i * (nx - 1);
+        A.block(idx, idx, nx - 1, nx - 1) = B;
+        if(i != ny - 2)
+        {
+            A.block(idx + nx - 1, idx, nx - 1, nx - 1) = C;
+            A.block(idx, idx + nx - 1, nx - 1, nx - 1) = C;
+        }
+    }
+    A.block(0, (nx - 1) * (ny - 2), nx - 1, nx - 1) = C;
+    A.block((nx - 1) * (ny - 2), 0, nx - 1, nx - 1) = C;
 }
 
-double PoissonSolver2D_DirichletBC::GetEy(int x_idx, int y_idx)
+void PoissonSolver2D_PeriodicBC::Solve(MatrixXd charge)
 {
-    int y_idx_p = (y_idx + 1 > ny_grids - 1) ? y_idx : y_idx + 1;
-    int y_idx_m = (y_idx - 1 < 0) ? y_idx : y_idx - 1;
-    double Ex = (phi(x_idx, y_idx_p) - phi(x_idx, y_idx_m)) / 2.0 / dx;
-    return Ex;
+    MatrixXd charge_modified = charge.block(0, 0, nx - 1, ny - 1);
+
+    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    phi.block(0, 0, nx - 1, ny - 1) = phi_vec.reshaped(nx - 1, ny - 1).eval();
+    phi.col(ny - 1) = phi.col(0);
+    phi.row(nx - 1) = phi.row(0);
+
+    //Calculate E
+    #pragma omp parallel for
+    for(int x_idx = 0; x_idx < nx; x_idx++)
+    {
+        for(int y_idx = 0; y_idx < ny; y_idx++)
+        {
+            int x_idx_p = (x_idx == nx - 1) ? 1 : x_idx + 1;
+            int x_idx_m = (x_idx == 0) ? nx - 2 : x_idx - 1;
+            int y_idx_p = (y_idx == ny - 1) ? 1 : y_idx + 1;
+            int y_idx_m = (y_idx == 0) ? ny - 2 : y_idx - 1;
+            Ex(x_idx, y_idx) = (phi(x_idx_m, y_idx) - phi(x_idx_p, y_idx)) / 2.0 / dx;
+            Ey(x_idx, y_idx) = (phi(x_idx, y_idx_m) - phi(x_idx, y_idx_p)) / 2.0 / dy;
+        }
+    }
+}
+
+//X Periodic + Y Dirichlet Boundary Condition
+PoissonSolver2D_XPeriodic_YDirichletBC::PoissonSolver2D_XPeriodic_YDirichletBC(int _nx, double _dx, int _ny, double _dy, VectorXd _phi_j0, VectorXd _phi_jn1):
+    nx(_nx), dx(_dx), ny(_ny), dy(_dy), Lx(_nx * _dx), Ly(_ny * _dy),
+    phi_j0(_phi_j0), phi_jn1(_phi_jn1),
+    dx2(_dx * _dx), dy2(_dy * _dy)
+{
+    phi.resize(nx, ny);
+    Ex.resize(nx, ny);
+    Ey.resize(nx, ny);
+    phi.col(0) = _phi_j0;
+    phi.col(ny - 1) = _phi_jn1;
+
+    /*********** construct oprator A (dx=dy=1) ************
+    B =  4 -1  0 -1     C = -1  0  0  0     A =  B  C  0  0
+        -1  4 -1  0          0 -1  0  0          C  B  C  0
+         0 -1  4 -1          0  0 -1  0          0  C  B  C
+        -1  0 -1  4          0  0  0 -1          0  0  C  B
+    *******************************************************/
+
+    B.resize(nx - 1, nx - 1);
+    B.setZero();
+    B.diagonal() = VectorXd::Constant(nx - 1, 2.0 / dx2 + 2.0 / dy2);
+    B.diagonal(1) = VectorXd::Constant(nx - 2,  -1.0 / dx2);
+    B.diagonal(-1) = VectorXd::Constant(nx - 2, -1.0 / dx2);
+    B(0, nx - 2) = -1.0 / dx2;
+    B(nx - 2, 0) = -1.0 / dx2;
+
+    C.resize(nx - 1, nx - 1);
+    C = -1.0 * MatrixXd::Identity(nx - 1, nx - 1) / dy2;
+
+    A.resize((nx - 1) * (ny - 2), (nx - 1) * (ny - 2));
+    A.setZero();
+    for(int i = 0; i < ny - 2; i++)
+    {
+        int idx = i * (nx - 1);
+        A.block(idx, idx, nx - 1, nx - 1) = B;
+        if(i != ny - 3)
+        {
+            A.block(idx + nx - 1, idx, nx - 1, nx - 1) = C;
+            A.block(idx, idx + nx - 1, nx - 1, nx - 1) = C;
+        }
+    }
+}
+
+void PoissonSolver2D_XPeriodic_YDirichletBC::Solve(MatrixXd charge)
+{
+    MatrixXd charge_modified = charge.block(0, 1, nx - 1, ny - 2);
+    charge_modified.col(0) += phi.col(0).segment(0, nx - 1) / dy2;
+    charge_modified.col(ny - 3) += phi.col(ny - 1).segment(0, nx - 1) / dy2;
+
+    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    //VectorXd phi_vec = A.householderQr().solve(charge_modified.reshaped());
+    phi.block(0, 1, nx - 1, ny - 2) = phi_vec.reshaped(nx - 1, ny - 2).eval();
+    phi.row(nx - 1) = phi.row(0);
+
+    //Calculate E
+    #pragma omp parallel for
+    for(int x_idx = 0; x_idx < nx; x_idx++)
+    {
+        for(int y_idx = 0; y_idx < ny; y_idx++)
+        {
+            int x_idx_p = (x_idx == nx - 1) ? 1 : x_idx + 1;
+            int x_idx_m = (x_idx == 0) ? nx - 2 : x_idx - 1;
+            int y_idx_p = (y_idx == ny - 1) ? y_idx : y_idx + 1;
+            int y_idx_m = (y_idx == 0) ? y_idx : y_idx - 1;
+            Ex(x_idx, y_idx) = (phi(x_idx_m, y_idx) - phi(x_idx_p, y_idx)) / 2.0 / dx;
+            Ey(x_idx, y_idx) = (phi(x_idx, y_idx_m) - phi(x_idx, y_idx_p)) / 2.0 / dy;
+        }
+    }
 }

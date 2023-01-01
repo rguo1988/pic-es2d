@@ -27,8 +27,8 @@ class Input
     const double vx_width = 2.0 * v_max;
     const double vy_width = 2.0 * v_max;
 
-    static const int nx = 51;
-    static const int ny = 51;
+    static const int nx = 128;
+    static const int ny = 128;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;
@@ -36,7 +36,7 @@ class Input
 
     //speices
     static constexpr double m_e = 1.0;
-    static constexpr double NePerCell = 100;
+    static constexpr double NePerCell = 200;
     static constexpr double T_e = 1;
     const double N_e = NePerCell * nx_grids * ny_grids;
     const double n_e_aver = N_e / Lx / Ly;
@@ -48,7 +48,7 @@ class Input
     const double lambda_D = sqrt(T_e);
 
     //time parameters
-    const int maxsteps = 1000;
+    const int maxsteps = 200;
     const int time_ran = 0;
     const double timestep_condition = 0.1;
     //const double dt = timestep_condition / w_p;

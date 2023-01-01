@@ -34,3 +34,23 @@ vector<double> GetParticlesX(Particles testp)
     }
     return test;
 }
+vector<double> GetParticlesVY(Particles testp)
+{
+    vector<double> test;
+    test.clear();
+    for(auto i : testp.rv)
+    {
+        test.push_back(i.vy);
+    }
+    return test;
+}
+vector<double> GetParticlesY(Particles testp)
+{
+    vector<double> test;
+    test.clear();
+    for(auto i : testp.rv)
+    {
+        test.push_back(i.y);
+    }
+    return test;
+}

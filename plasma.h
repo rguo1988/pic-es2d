@@ -16,7 +16,8 @@ using namespace Eigen;
 class PlasmaSystem: public Input
 {
   public:
-    PoissonSolver2D_DirichletBC poisson_solver;
+    //PoissonSolver2D_DirichletBC poisson_solver;
+    PoissonSolver2D_PeriodicBC poisson_solver;
     ConstMagneticField B;
     MatrixXd charge;
 
@@ -33,8 +34,6 @@ class PlasmaSystem: public Input
 
     //trace energy during simulation
     void CalculateE();
-    //calculate the temperature in every cell
-    void CalculateT();
 
     //Setup Charge
     void SetupSpeciesChargeOnGrids();

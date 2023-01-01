@@ -34,36 +34,14 @@ void PlasmaSystem::CalculateE()
     Ep.push_back(tempEp);
     Et.push_back(tempEk + tempEp);
 }
-void PlasmaSystem::CalculateT()
-{
-    T.clear();
-    T.resize(nx_grids, 0.0);
-    num_in_grid.clear();
-    num_in_grid.resize(nx_grids, 0.0);
-
-    for (auto particles_a : species)
-    {
-        for(auto prv : particles_a.rv)
-        {
-            int idx_grid = floor(prv.x / dx);
-            if (idx_grid == nx_grids)
-                idx_grid = 0;
-            T[idx_grid] += particles_a.m * (prv.vx * prv.vx);
-            num_in_grid[idx_grid]++;
-        }
-    }
-    for(int i = 0; i < nx_grids; i++)
-    {
-        T[i] /= num_in_grid[i];
-    }
-}
 PlasmaSystem::PlasmaSystem():
-    B(0, 0, 0), poisson_solver(nx_grids, dx, ny_grids, dy, VectorXd::Zero(ny_grids), VectorXd::Zero(nx_grids), VectorXd::Zero(ny_grids), VectorXd::Zero(nx_grids))
+    B(0, 0, 0),
+    poisson_solver(nx, dx, ny, dy)
 {
     Ek.clear();
     Ep.clear();
     Et.clear();
-    charge.resize(nx_grids, ny_grids);
+    charge.resize(nx, ny);
 }
 
 void PlasmaSystem::PushOneStep(int if_init)
@@ -127,7 +105,6 @@ void PlasmaSystem::Run()
     //main loop
     for(int n = 0; n < maxsteps + 1; n++)
     {
-        CalculateT();
         int percent = 100 * n / (maxsteps);
         //print running process
         if(percent % 5 == 0)
@@ -142,22 +119,22 @@ void PlasmaSystem::Run()
 
             for(auto particles_a : species)
             {
-                string filenameV = data_path + particles_a.name + "v_data" + p;
-                string filenameX = data_path + particles_a.name + "x_data" + p;
+                string filenameVX = data_path + particles_a.name + "_vx_data" + p;
+                string filenameVY = data_path + particles_a.name + "_vy_data" + p;
+                string filenameX = data_path + particles_a.name + "_x_data" + p;
+                string filenameY = data_path + particles_a.name + "_y_data" + p;
                 //output particles x v
-                OutputData(filenameV, GetParticlesVX(particles_a));
+                OutputData(filenameVX, GetParticlesVX(particles_a));
+                OutputData(filenameVY, GetParticlesVY(particles_a));
                 OutputData(filenameX,  GetParticlesX(particles_a));
-                //output temperature distribution
-                //OutputData(data_path + "temperature" + p, T);
-                //OutputData(data_path + "num_in_grid" + p, num_in_grid);
+                OutputData(filenameY,  GetParticlesY(particles_a));
             }
         }
 
         //calculate E
-        charge.resize(nx_grids,ny_grids);
         charge.setZero();
         SetupSpeciesChargeOnGrids();
-        //SetupBackgroundChargeOnGrids();
+        SetupBackgroundChargeOnGrids();
         poisson_solver.Solve(charge);
         PushOneStep(n);
         CalculateE();
@@ -176,25 +153,19 @@ void PlasmaSystem::PrintParameters() const
     cout << "  PIC Simulation Start!" << endl;
     cout << "--------------------------------------------" << endl;
     cout << "  Simulation Parameters:" << endl;
-    cout << setw(13) << "  Length"
-         << setw(13) << "       k"
-         << setw(13) << "nx_grids"
-         << setw(13) << "Lambda_D"
-         << setw(13) << setprecision(6) << "      dx" << endl;
+    cout << "    Lx = " << left << setw(7) << setprecision(4)  << Lx
+         << "    kx = " << left << setw(7) << kx
+         << "    nx = " << left << setw(7) << nx
+         << "    dx = " << left << setw(7) << setprecision(4) << dx << endl;
 
-    cout << setw(13) << Lx
-         << setw(13) << kx
-         << setw(13) << nx_grids
-         << setw(13) << lambda_D
-         << setw(13) << dx << endl;
+    cout << "    Ly = " << left << setw(7) << setprecision(4) << Ly
+         << "    ky = " << left << setw(7) << ky
+         << "    ny = " << left << setw(7) << ny
+         << "    dy = " << left << setw(7) << setprecision(4) << dy << endl;
 
-    cout << setw(13) << "MaxSteps"
-         << setw(13) << "      dt"
-         << setw(13) << "    Time" << endl;
-
-    cout << setw(13) << maxsteps
-         << setw(13) << dt
-         << setw(13) << maxsteps*dt << endl;
+    cout << " Steps = " << left << setw(7) << maxsteps
+         << "    dt = " << left << setw(7)  << dt
+         << "  Time = " << left << setw(7)  << maxsteps*dt << endl;
 
     cout << "--------------------------------------------" << endl;
     if(dx > lambda_D)
@@ -205,10 +176,10 @@ void PlasmaSystem::PrintParameters() const
     for(auto particles_a : species)
     {
         cout << "  Species: " << particles_a.name << endl;
-        cout  << setw(8) << "N = "  << particles_a.num
-              << setw(15) << "N/Cell = " << particles_a.num / nx_grids
-              << setw(8) << "q = " << setprecision(6) << particles_a.q
-              << setw(8) << "m = " << particles_a.m << endl;
+        cout << "     m = " << left << setw(7) << particles_a.m
+             << "N/Cell = " << left << setw(7) << particles_a.num / nx_grids / ny_grids
+             << "     N = " << left << setw(7) << particles_a.num
+             << "     q = " << left << setw(7) << setprecision(4) << particles_a.q << endl;
     }
     cout << "--------------------------------------------" << endl;
     cout << "  Data: " << endl;
@@ -229,26 +200,25 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
         net_charge += p.num * p.q;
     }
     double normalization = 0.0;
-    MatrixXd rho(nx_grids, ny_grids);
-    for(int i = 0; i < nx_grids; i++)
+    MatrixXd rho(nx, ny);
+    for(int i = 0; i < nx; i++)
     {
         double x = i * dx;
-        for(int j = 0; j < ny_grids; j++)
+        for(int j = 0; j < ny; j++)
         {
             double y = j * dy;
             rho(i, j) = GetBackgroundDensity(x, y);
             normalization += rho(i, j);
         }
     }
-    charge -= net_charge * rho / dx / normalization;
-    //for(int i = 0; i < nx_grids; i++)
-    //{
-    //for(int j = 0; j < ny_grids; j++)
-    //{
-    //rho(i, j) /= normalization;
-    //charge(i, j) -= net_charge * rho(i, j) / dx;
-    //}
-    //}
+    //charge -= net_charge * rho / dx/dy / normalization;
+    for(int i = 0; i < nx_grids; i++)
+    {
+        for(int j = 0; j < ny_grids; j++)
+        {
+            charge(i, j) -= net_charge * rho(i, j) / normalization / dx / dy;
+        }
+    }
 }
 
 void PlasmaSystem::SetupSpeciesChargeOnGrids()
@@ -258,7 +228,6 @@ void PlasmaSystem::SetupSpeciesChargeOnGrids()
     {
         for(int i = 0; i < p.num; i++)
         {
-            //map<int, double> partition_contrib = PartitionToGrid(dx, nx_grids, p.rv[i].x, 2); //interpolation
             PartitionToGrids partition(dx, dy, p.rv[i].x, p.rv[i].y); //linear interpolation //ec scheme
             for(int i = 0; i < 4; i++)
             {

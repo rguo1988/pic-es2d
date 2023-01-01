@@ -10,6 +10,8 @@ using namespace std;
 
 void OutputData(string filename, vector<double> a);
 vector<double> GetParticlesVX(Particles testp);
+vector<double> GetParticlesVY(Particles testp);
 vector<double> GetParticlesX(Particles testp);
+vector<double> GetParticlesY(Particles testp);
 
 #endif

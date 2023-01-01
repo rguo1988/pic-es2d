@@ -6,12 +6,11 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <map>
 #include <string>
 #include<stdio.h>
 #include<stdlib.h>
 #include<limits>
-#include<omp.h>
+#include<chrono>
 
 //project head file
 #include"particles.h"
@@ -24,12 +23,14 @@ using namespace std;
 
 int main()
 {
-    double start_time = omp_get_wtime();
+    auto start_time = chrono::high_resolution_clock::now();
     //creat plasma
     PlasmaSystem plasma;
 
     plasma.Run();
-    double stop_time = omp_get_wtime();
-    cout << "  Using Time: " << stop_time - start_time << endl;
+    auto stop_time = chrono::high_resolution_clock::now();
+    auto using_time = chrono::duration_cast<chrono::seconds>(stop_time - start_time).count();
+    cout << "  Using Time: " << using_time << "s" << endl;
+    cout << "--------------------------------------------" << endl;
     return 0;
 }
