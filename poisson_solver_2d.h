@@ -1,6 +1,7 @@
 #ifndef _poisson_solver_2d_h
 #define _poisson_solver_2d_h
 #include<eigen3/Eigen/Core>
+#include<eigen3/Eigen/SparseCore>
 using namespace Eigen;
 
 class PoissonSolver2D_DirichletBC
@@ -25,6 +26,7 @@ class PoissonSolver2D_DirichletBC
     MatrixXd A;
     MatrixXd B;
     MatrixXd C;
+    SparseMatrix<double> SpA;
 
     //electric field
     MatrixXd Ex;
@@ -64,6 +66,7 @@ class PoissonSolver2D_PeriodicBC
     MatrixXd A;
     MatrixXd B;
     MatrixXd C;
+    SparseMatrix<double> SpA;
 
     //electric field
     MatrixXd Ex;
@@ -107,6 +110,7 @@ class PoissonSolver2D_XPeriodic_YDirichletBC
     MatrixXd A;
     MatrixXd B;
     MatrixXd C;
+    SparseMatrix<double> SpA;
 
     //electric field
     MatrixXd Ex;

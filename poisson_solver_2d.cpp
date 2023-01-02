@@ -8,6 +8,7 @@
 #include<eigen3/Eigen/Core>
 #include<eigen3/Eigen/Dense>
 #include<eigen3/Eigen/QR>
+#include<eigen3/Eigen/SparseCholesky>
 #include"poisson_solver_2d.h"
 
 using namespace Eigen;
@@ -54,6 +55,9 @@ PoissonSolver2D_DirichletBC::PoissonSolver2D_DirichletBC(int _nx, double _dx, in
             A.block(idx, idx + nx - 2, nx - 2, nx - 2) = C;
         }
     }
+    //construct Sparse SpA
+    SpA.resize((nx - 2) * (ny - 2), (nx - 2) * (ny - 2));
+    SpA = A.sparseView();
 }
 
 void PoissonSolver2D_DirichletBC::Solve(MatrixXd charge)
@@ -64,9 +68,16 @@ void PoissonSolver2D_DirichletBC::Solve(MatrixXd charge)
     charge_modified.col(0) += phi.col(0).segment(1, nx - 2) / dy2;
     charge_modified.col(ny - 3) += phi.col(ny - 1).segment(1, nx - 2) / dy2;
 
-    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    //solving by DenseMatrix Method
+    //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
     //VectorXd phi_vec = A.householderQr().solve(charge_modified.reshaped());
     //VectorXd phi_vec = A.fullPivLu().solve(charge_modified.reshaped());
+    
+    //solving SparseMatrix Method
+    SimplicialLDLT<SparseMatrix<double>> SpA_solver;
+    SpA_solver.compute(SpA);
+    VectorXd phi_vec = SpA_solver.solve(charge_modified.reshaped());
+    
     phi.block(1, 1, nx - 2, ny - 2) = phi_vec.reshaped(nx - 2, ny - 2).eval();
 
     //Calculate E
@@ -126,13 +137,24 @@ PoissonSolver2D_PeriodicBC::PoissonSolver2D_PeriodicBC(int _nx, double _dx, int 
     }
     A.block(0, (nx - 1) * (ny - 2), nx - 1, nx - 1) = C;
     A.block((nx - 1) * (ny - 2), 0, nx - 1, nx - 1) = C;
+
+    //construct Sparse SpA
+    SpA.resize((nx - 1) * (ny - 1), (nx - 1) * (ny - 1));
+    SpA = A.sparseView();
 }
 
 void PoissonSolver2D_PeriodicBC::Solve(MatrixXd charge)
 {
     MatrixXd charge_modified = charge.block(0, 0, nx - 1, ny - 1);
 
-    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    //solving by DenseMatrix Method
+    //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+   
+    //solving SparseMatrix Method
+    SimplicialLDLT<SparseMatrix<double>> SpA_solver;
+    SpA_solver.compute(SpA);
+    VectorXd phi_vec = SpA_solver.solve(charge_modified.reshaped());
+
     phi.block(0, 0, nx - 1, ny - 1) = phi_vec.reshaped(nx - 1, ny - 1).eval();
     phi.col(ny - 1) = phi.col(0);
     phi.row(nx - 1) = phi.row(0);
@@ -195,6 +217,9 @@ PoissonSolver2D_XPeriodic_YDirichletBC::PoissonSolver2D_XPeriodic_YDirichletBC(i
             A.block(idx, idx + nx - 1, nx - 1, nx - 1) = C;
         }
     }
+    //construct Sparse SpA
+    SpA.resize((nx - 1) * (ny - 2), (nx - 1) * (ny - 2));
+    SpA = A.sparseView();
 }
 
 void PoissonSolver2D_XPeriodic_YDirichletBC::Solve(MatrixXd charge)
@@ -203,8 +228,14 @@ void PoissonSolver2D_XPeriodic_YDirichletBC::Solve(MatrixXd charge)
     charge_modified.col(0) += phi.col(0).segment(0, nx - 1) / dy2;
     charge_modified.col(ny - 3) += phi.col(ny - 1).segment(0, nx - 1) / dy2;
 
-    VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
-    //VectorXd phi_vec = A.householderQr().solve(charge_modified.reshaped());
+    //solving by DenseMatrix Method
+    //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
+    
+    //solving by SparseMatrix Method
+    SimplicialLDLT<SparseMatrix<double>> SpA_solver;
+    SpA_solver.compute(SpA);
+    VectorXd phi_vec = SpA_solver.solve(charge_modified.reshaped());
+
     phi.block(0, 1, nx - 1, ny - 2) = phi_vec.reshaped(nx - 1, ny - 2).eval();
     phi.row(nx - 1) = phi.row(0);
 
