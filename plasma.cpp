@@ -211,14 +211,14 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
             normalization += rho(i, j);
         }
     }
-    //charge -= net_charge * rho / dx/dy / normalization;
-    for(int i = 0; i < nx_grids; i++)
-    {
-        for(int j = 0; j < ny_grids; j++)
-        {
-            charge(i, j) -= net_charge * rho(i, j) / normalization / dx / dy;
-        }
-    }
+    charge -= net_charge * rho / dx / dy / normalization;
+    //for(int i = 0; i < nx_grids; i++)
+    //{
+    //for(int j = 0; j < ny_grids; j++)
+    //{
+    //charge(i, j) -= net_charge * rho(i, j) / normalization / dx / dy;
+    //}
+    //}
 }
 
 void PlasmaSystem::SetupSpeciesChargeOnGrids()

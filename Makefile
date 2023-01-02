@@ -2,14 +2,14 @@
 CC = g++
 SRC = main.cpp diagnose.cpp plasma.cpp particles.cpp poisson_solver_2d.cpp bfield.cpp 
 OBJ := $(SRC:.cpp=.o)
-CFLAGS = -fopenmp -O3 -march=native -lgsl -lgslcblas -lm -std=c++11
+CFLAGS = -fopenmp -march=native -O3 -lgsl -lgslcblas -lm -std=c++11
 TARGET = pic
 NTHREADS = 4
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
+	$(CC) $(OBJ) -o $(TARGET) $(CFLAGS) 
 $(OBJ): %.o: %.cpp input.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 .PHONY: clean
 clean:

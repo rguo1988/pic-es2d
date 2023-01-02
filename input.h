@@ -27,8 +27,8 @@ class Input
     const double vx_width = 2.0 * v_max;
     const double vy_width = 2.0 * v_max;
 
-    static const int nx = 128;
-    static const int ny = 128;
+    static const int nx = 64;
+    static const int ny = 64;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;

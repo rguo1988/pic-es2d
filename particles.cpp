@@ -1,6 +1,7 @@
 #include "particles.h"
 #include<gsl/gsl_rng.h>
-#include<sys/timeb.h>
+//#include<sys/timeb.h>
+#include<ctime>
 #include<cmath>
 #include<iostream>
 
@@ -24,9 +25,11 @@ Particles::Particles(double _n, double _q, double _m, string _name):
 void Particles::InitializeXV_Random(double (*Distribution)(double, double, double, double), double v_max, double Lx, double Ly)
 {
     //set random number
-    struct timeb time_seed;
-    ftime(&time_seed);
-    gsl_rng_default_seed = (time_seed.time * 1000 + time_seed.millitm);
+    //struct timeb time_seed;
+    //ftime(&time_seed);
+    //gsl_rng_default_seed = (time_seed.time * 1000 + time_seed.millitm);
+    gsl_rng_default_seed = ((unsigned long)(time(NULL)));
+    //gsl_rng_env_setup();
     gsl_rng *r;
     r = gsl_rng_alloc(gsl_rng_default);
 
@@ -51,4 +54,5 @@ void Particles::InitializeXV_Random(double (*Distribution)(double, double, doubl
         rv[i].vx = temp_vx;
         rv[i].vy = temp_vy;
     }
+    gsl_rng_free(r);
 }
