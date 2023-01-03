@@ -46,12 +46,9 @@ PlasmaSystem::PlasmaSystem():
 
 void PlasmaSystem::Run()
 {
+    Initialize();
     PrintParameters();
     PrintSpecialInformation();
-    cout << "  Initializing..." << endl;
-    Initialize();
-    cout << "Finish!" << endl;
-    cout << "--------------------------------------------" << endl;
 
     //main loop
     for(int n = 0; n < maxsteps + 1; n++)
@@ -213,13 +210,6 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
         }
     }
     charge -= net_charge * rho / dx / dy / normalization;
-    //for(int i = 0; i < nx_grids; i++)
-    //{
-    //for(int j = 0; j < ny_grids; j++)
-    //{
-    //charge(i, j) -= net_charge * rho(i, j) / normalization / dx / dy;
-    //}
-    //}
 }
 
 void PlasmaSystem::SetupSpeciesChargeOnGrids()
