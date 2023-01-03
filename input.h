@@ -14,7 +14,7 @@ class Input
 {
   public:
     //title
-    const string title = "Landau damping of 2D Langmuir waves";
+    const string title = "Landau damping of 2D Langmuir waves (X-direction)";
     //if continue from data
     const bool if_continued = 0;
 
@@ -27,8 +27,8 @@ class Input
     const double vx_width = 2.0 * v_max;
     const double vy_width = 2.0 * v_max;
 
-    static const int nx = 128;
-    static const int ny = 128;
+    static const int nx = 256;
+    static const int ny = 256;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;
@@ -65,7 +65,7 @@ class Input
     vector<Particles> species;
     static double GetElecInitDistrib(double x, double y, double vx, double vy)
     {
-        double ue = 1.0 + d * cos(ky * y);
+        double ue = 1.0 + d * cos(kx * y);
         double f = sqrt( m_e / (2 * M_PI * T_e) ) * exp(-0.5 * m_e * (vx * vx + vy * vy) / T_e);
         return ue / Lx / Ly * f;
     }

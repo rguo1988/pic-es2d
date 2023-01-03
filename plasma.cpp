@@ -46,9 +46,12 @@ PlasmaSystem::PlasmaSystem():
 
 void PlasmaSystem::Run()
 {
-    Initialize();
     PrintParameters();
     PrintSpecialInformation();
+    cout << "  Initializing..." << endl;
+    Initialize();
+    cout << "Finish!" << endl;
+    cout << "--------------------------------------------" << endl;
 
     //main loop
     for(int n = 0; n < maxsteps + 1; n++)
