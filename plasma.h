@@ -39,8 +39,6 @@ class PlasmaSystem: public Input
     void SetupSpeciesChargeOnGrids();
     void SetupBackgroundChargeOnGrids();
 
-    //BorisPusher
-    void PushOneStep(int if_init);
     void Run();
 
 };

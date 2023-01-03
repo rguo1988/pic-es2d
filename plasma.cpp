@@ -17,7 +17,7 @@ void PlasmaSystem::CalculateE()
     {
         for(auto prv : particles_a.rv)
         {
-            tempEk += 0.5 * particles_a.m * (prv.vx * prv.vx);
+            tempEk += 0.5 * particles_a.m * (prv.vx * prv.vx + prv.vy * prv.vy);
         }
         particles_tot_num += particles_a.num;
     }
@@ -28,73 +28,21 @@ void PlasmaSystem::CalculateE()
     for(int i = 0; i < nx_grids; i++)
     {
         for(int j = 0; j < ny_grids; j++)
-            tempEp += 0.5 * pow(poisson_solver.GetEx(i, j), 2) * dx;
+            tempEp += 0.5 * (pow(poisson_solver.GetEx(i, j), 2) + pow(poisson_solver.GetEy(i, j), 2)) * dx * dy;
     }
     tempEp /= particles_tot_num;
     Ep.push_back(tempEp);
     Et.push_back(tempEk + tempEp);
 }
 PlasmaSystem::PlasmaSystem():
-    B(0, 0, 0),
-    poisson_solver(nx, dx, ny, dy)
+    poisson_solver(nx, dx, ny, dy),
+    B(0, 0, 0)
 {
     Ek.clear();
     Ep.clear();
     Et.clear();
     charge.resize(nx, ny);
 }
-
-void PlasmaSystem::PushOneStep(int if_init)
-{
-    for(auto &particles_a : species)
-    {
-        #pragma omp parallel for
-        for(int j = 0; j < particles_a.num; j++)
-        {
-            PartitionToGrids partition(dx, dy, particles_a.rv[j].x, particles_a.rv[j].y); //linear interpolation //ec scheme
-            double fex = 0.0;
-            double fey = 0.0;
-            for(int i = 0; i < 4; i++)
-            {
-                fex += particles_a.q * poisson_solver.GetEx(partition.x_idx[i], partition.y_idx[i]) * partition.contrib[i];
-                fey += particles_a.q * poisson_solver.GetEy(partition.x_idx[i], partition.y_idx[i]) * partition.contrib[i];
-            }
-
-            if(if_init == 0)
-            {
-                particles_a.rv[j].vx += 0.5 * fex * dt / particles_a.m;
-                particles_a.rv[j].x += particles_a.rv[j].vx * dt;
-                particles_a.rv[j].vy += 0.5 * fey * dt / particles_a.m;
-                particles_a.rv[j].y += particles_a.rv[j].vy * dt;
-            }
-            else
-            {
-                particles_a.rv[j].vx += fex * dt / particles_a.m;
-                particles_a.rv[j].x += particles_a.rv[j].vx * dt;
-                particles_a.rv[j].vy += fey * dt / particles_a.m;
-                particles_a.rv[j].y += particles_a.rv[j].vy * dt;
-            }
-            //period condition
-            while(particles_a.rv[j].x < 0.0)
-            {
-                particles_a.rv[j].x += Lx;
-            }
-            while(particles_a.rv[j].x >= Lx)
-            {
-                particles_a.rv[j].x -= Lx;
-            }
-            while(particles_a.rv[j].y < 0.0)
-            {
-                particles_a.rv[j].y += Ly;
-            }
-            while(particles_a.rv[j].y >= Ly)
-            {
-                particles_a.rv[j].y -= Ly;
-            }
-        }
-    }
-}
-
 
 void PlasmaSystem::Run()
 {
@@ -136,7 +84,57 @@ void PlasmaSystem::Run()
         SetupSpeciesChargeOnGrids();
         SetupBackgroundChargeOnGrids();
         poisson_solver.Solve(charge);
-        PushOneStep(n);
+
+        //Push One Step
+        for(auto &particles_a : species)
+        {
+            #pragma omp parallel for
+            for(int j = 0; j < particles_a.num; j++)
+            {
+                PartitionToGrids partition(dx, dy, particles_a.rv[j].x, particles_a.rv[j].y); //linear interpolation //ec scheme
+                double fex = 0.0;
+                double fey = 0.0;
+                for(int i = 0; i < 4; i++)
+                {
+                    fex += particles_a.q * partition.contrib[i] * poisson_solver.GetEx(partition.x_idx[i], partition.y_idx[i]);
+                    fey += particles_a.q * partition.contrib[i] * poisson_solver.GetEy(partition.x_idx[i], partition.y_idx[i]);
+                }
+
+                if(n == 0)
+                {
+                    particles_a.rv[j].vx += 0.5 * fex * dt / particles_a.m;
+                    particles_a.rv[j].x += particles_a.rv[j].vx * dt;
+                    particles_a.rv[j].vy += 0.5 * fey * dt / particles_a.m;
+                    particles_a.rv[j].y += particles_a.rv[j].vy * dt;
+                }
+                else
+                {
+                    particles_a.rv[j].vx += fex * dt / particles_a.m;
+                    particles_a.rv[j].x += particles_a.rv[j].vx * dt;
+                    particles_a.rv[j].vy += fey * dt / particles_a.m;
+                    particles_a.rv[j].y += particles_a.rv[j].vy * dt;
+                }
+                //period condition
+                while(particles_a.rv[j].x < 0.0)
+                {
+                    particles_a.rv[j].x += Lx;
+                }
+                while(particles_a.rv[j].x >= Lx)
+                {
+                    particles_a.rv[j].x -= Lx;
+                }
+                while(particles_a.rv[j].y < 0.0)
+                {
+                    particles_a.rv[j].y += Ly;
+                }
+                while(particles_a.rv[j].y >= Ly)
+                {
+                    particles_a.rv[j].y -= Ly;
+                }
+            }
+        }
+
+        //diagnose energy
         CalculateE();
     }
     //output energy evolution
@@ -150,7 +148,7 @@ void PlasmaSystem::Run()
 void PlasmaSystem::PrintParameters() const
 {
     cout << "--------------------------------------------" << endl;
-    cout << "  PIC Simulation Start!" << endl;
+    cout << "  2D ES PIC Simulation Start!" << endl;
     cout << "--------------------------------------------" << endl;
     cout << "  Simulation Parameters:" << endl;
     cout << "    Lx = " << left << setw(7) << setprecision(4)  << Lx

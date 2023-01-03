@@ -27,8 +27,8 @@ class Input
     const double vx_width = 2.0 * v_max;
     const double vy_width = 2.0 * v_max;
 
-    static const int nx = 96;
-    static const int ny = 96;
+    static const int nx = 128;
+    static const int ny = 128;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;
@@ -36,7 +36,7 @@ class Input
 
     //speices
     static constexpr double m_e = 1.0;
-    static constexpr double NePerCell = 200;
+    static constexpr double NePerCell = 100;
     static constexpr double T_e = 1;
     const double N_e = NePerCell * nx_grids * ny_grids;
     const double n_e_aver = N_e / Lx / Ly;
@@ -65,19 +65,9 @@ class Input
     vector<Particles> species;
     static double GetElecInitDistrib(double x, double y, double vx, double vy)
     {
-        double ue = 1.0 + d * cos(kx * x);
+        double ue = 1.0 + d * cos(ky * y);
         double f = sqrt( m_e / (2 * M_PI * T_e) ) * exp(-0.5 * m_e * (vx * vx + vy * vy) / T_e);
         return ue / Lx / Ly * f;
-    }
-    static double GetElecXDistrib(double x, double y)
-    {
-        double ue = 1.0 + d * cos(kx * x);
-        return ue;
-    }
-    static double GetElecVDistrib(double vx, double vy)
-    {
-        double f = sqrt( m_e / (2 * M_PI * T_e) ) * exp(-0.5 * m_e * (vx * vx + vy * vy) / T_e);
-        return f;
     }
 
     //electrons as background
