@@ -1,8 +1,6 @@
 #ifndef _plasma_h
 #define _plasma_h
 
-#include<gsl/gsl_rng.h>
-#include<sys/timeb.h>
 #include<eigen3/Eigen/Core>
 
 #include"particles.h"

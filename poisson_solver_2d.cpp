@@ -15,9 +15,9 @@ using namespace Eigen;
 
 //Dirichlet Boundary Condition
 PoissonSolver2D_DirichletBC::PoissonSolver2D_DirichletBC(int _nx, double _dx, int _ny, double _dy, VectorXd _phi_0k, VectorXd _phi_j0, VectorXd _phi_n1k, VectorXd _phi_jn1):
-    nx(_nx), dx(_dx), ny(_ny), dy(_dy), Lx(_nx * _dx), Ly(_ny * _dy),
-    phi_0k(_phi_0k), phi_j0(_phi_j0), phi_n1k(_phi_n1k), phi_jn1(_phi_jn1),
-    dx2(_dx * _dx), dy2(_dy * _dy)
+    nx(_nx), ny(_ny), dx(_dx), dy(_dy), Lx(_nx * _dx), Ly(_ny * _dy),
+    dx2(_dx * _dx), dy2(_dy * _dy),
+    phi_0k(_phi_0k), phi_j0(_phi_j0), phi_n1k(_phi_n1k), phi_jn1(_phi_jn1)
 {
     phi.resize(nx, ny);
     Ex.resize(nx, ny);
@@ -72,12 +72,12 @@ void PoissonSolver2D_DirichletBC::Solve(MatrixXd charge)
     //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
     //VectorXd phi_vec = A.householderQr().solve(charge_modified.reshaped());
     //VectorXd phi_vec = A.fullPivLu().solve(charge_modified.reshaped());
-    
+
     //solving SparseMatrix Method
     SimplicialLDLT<SparseMatrix<double>> SpA_solver;
     SpA_solver.compute(SpA);
     VectorXd phi_vec = SpA_solver.solve(charge_modified.reshaped());
-    
+
     phi.block(1, 1, nx - 2, ny - 2) = phi_vec.reshaped(nx - 2, ny - 2).eval();
 
     //Calculate E
@@ -149,7 +149,7 @@ void PoissonSolver2D_PeriodicBC::Solve(MatrixXd charge)
 
     //solving by DenseMatrix Method
     //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
-   
+
     //solving SparseMatrix Method
     SimplicialLDLT<SparseMatrix<double>> SpA_solver;
     SpA_solver.compute(SpA);
@@ -230,7 +230,7 @@ void PoissonSolver2D_XPeriodic_YDirichletBC::Solve(MatrixXd charge)
 
     //solving by DenseMatrix Method
     //VectorXd phi_vec = A.llt().solve(charge_modified.reshaped());
-    
+
     //solving by SparseMatrix Method
     SimplicialLDLT<SparseMatrix<double>> SpA_solver;
     SpA_solver.compute(SpA);

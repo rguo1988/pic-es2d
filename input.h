@@ -4,10 +4,6 @@
 #include"particles.h"
 #include<string>
 #include<iostream>
-#include<fstream>
-#include<iomanip>
-#include<gsl/gsl_rng.h>
-#include<sys/timeb.h>
 using namespace std;
 
 class Input

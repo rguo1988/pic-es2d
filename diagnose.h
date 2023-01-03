@@ -1,7 +1,6 @@
 //测试，调试，以及输出文件
 #ifndef _diagnose_h
 #define _diagnose_h
-#include<fstream>
 #include<string>
 #include<vector>
 #include"particles.h"
