@@ -14,6 +14,7 @@ void PlasmaSystem::CalculateE()
     int particles_tot_num = 0;
     for (auto particles_a : species)
     {
+        #pragma omp parallel for reduction(+:tempEk)
         for(auto prv : particles_a.rv)
         {
             tempEk += 0.5 * particles_a.m * (prv.vx * prv.vx + prv.vy * prv.vy);
@@ -24,6 +25,7 @@ void PlasmaSystem::CalculateE()
     Ek.push_back(tempEk);
 
     double tempEp = 0.0;
+    #pragma omp parallel for reduction(+:tempEp) collapse(2)
     for(int i = 0; i < nx_grids; i++)
     {
         for(int j = 0; j < ny_grids; j++)
@@ -87,7 +89,7 @@ void PlasmaSystem::Run()
         //Push One Step
         for(auto &particles_a : species)
         {
-            #pragma omp parallel for 
+            #pragma omp parallel for
             for(int j = 0; j < particles_a.num; j++)
             {
                 PartitionToGrids partition(dx, dy, particles_a.rv[j].x, particles_a.rv[j].y); //linear interpolation //ec scheme
@@ -197,19 +199,18 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
         net_charge += p.num * p.q;
     }
     double normalization = 0.0;
-    MatrixXd rho(nx, ny);
-    #pragma omp parallel for reduction(+:normalization)
+    MatrixXd temp_rho(nx, ny);
     for(int i = 0; i < nx; i++)
     {
         double x = i * dx;
         for(int j = 0; j < ny; j++)
         {
             double y = j * dy;
-            rho(i, j) = GetBackgroundDensity(x, y);
-            normalization += rho(i, j);
+            temp_rho(i, j) = GetBackgroundDensity(x, y);
+            normalization += temp_rho(i, j);
         }
     }
-    charge -= net_charge * rho / dx / dy / normalization;
+    charge -= net_charge * temp_rho / dx / dy / normalization;
 }
 
 void PlasmaSystem::SetupSpeciesChargeOnGrids()
@@ -222,7 +223,7 @@ void PlasmaSystem::SetupSpeciesChargeOnGrids()
             PartitionToGrids partition(dx, dy, p.rv[i].x, p.rv[i].y); //linear interpolation //ec scheme
             for(int i = 0; i < 4; i++)
             {
-                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy; // / pow(gridWidth, 1);
+                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy; // charge is density of charge
             }
         }
     }
