@@ -198,6 +198,7 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
     }
     double normalization = 0.0;
     MatrixXd rho(nx, ny);
+    #pragma omp parallel for reduction(+:normalization)
     for(int i = 0; i < nx; i++)
     {
         double x = i * dx;
