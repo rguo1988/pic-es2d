@@ -87,7 +87,7 @@ void PlasmaSystem::Run()
         //Push One Step
         for(auto &particles_a : species)
         {
-            #pragma omp parallel for
+            #pragma omp parallel for schedule(dynamic,NePerCell)
             for(int j = 0; j < particles_a.num; j++)
             {
                 PartitionToGrids partition(dx, dy, particles_a.rv[j].x, particles_a.rv[j].y); //linear interpolation //ec scheme
@@ -225,4 +225,8 @@ void PlasmaSystem::SetupSpeciesChargeOnGrids()
             }
         }
     }
+    charge.col(0) += charge.col(ny - 1);
+    charge.col(ny - 1) = charge.col(0);
+    charge.row(0) += charge.row(nx - 1);
+    charge.row(nx - 1) = charge.row(0);
 }
