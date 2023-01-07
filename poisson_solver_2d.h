@@ -23,9 +23,9 @@ class PoissonSolver2D_DirichletBC
     VectorXd phi_jn1;
 
     //oprator
-    MatrixXd A;
-    MatrixXd B;
-    MatrixXd C;
+    //MatrixXd A;
+    //MatrixXd B;
+    //MatrixXd C;
     SparseMatrix<double> SpA;
 
     //electric field
