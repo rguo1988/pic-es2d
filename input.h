@@ -10,12 +10,12 @@ class Input
 {
   public:
     //title
-    const string title = "Landau damping of 2D Langmuir waves (X-direction)";
+    const string title = "Landau damping of 2D Langmuir waves (Y-direction)";
     //if continue from data
     const bool if_continued = 0;
 
     //simulation box
-    static constexpr double kx = 0.5;
+    static constexpr double kx = 0.7;
     static constexpr double ky = 0.5;
     static constexpr double Lx = 2.0 * M_PI / kx;
     static constexpr double Ly = 2.0 * M_PI / ky;
@@ -24,7 +24,7 @@ class Input
     const double vy_width = 2.0 * v_max;
 
     static const int nx = 256;
-    static const int ny = 256;
+    static const int ny = 128;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;
