@@ -71,10 +71,10 @@ void PlasmaSystem::Run()
                 string filenameX = data_path + particles_a.name + "_x_data" + p;
                 string filenameY = data_path + particles_a.name + "_y_data" + p;
                 //output particles x v
-                OutputData(filenameVX, GetParticlesVX(particles_a));
-                OutputData(filenameVY, GetParticlesVY(particles_a));
-                OutputData(filenameX,  GetParticlesX(particles_a));
-                OutputData(filenameY,  GetParticlesY(particles_a));
+                //OutputData(filenameVX, GetParticlesVX(particles_a));
+                //OutputData(filenameVY, GetParticlesVY(particles_a));
+                //OutputData(filenameX,  GetParticlesX(particles_a));
+                //OutputData(filenameY,  GetParticlesY(particles_a));
             }
         }
 
@@ -87,7 +87,7 @@ void PlasmaSystem::Run()
         //Push One Step
         for(auto &particles_a : species)
         {
-            #pragma omp parallel for schedule(dynamic,NePerCell)
+            #pragma omp parallel for 
             for(int j = 0; j < particles_a.num; j++)
             {
                 PartitionToGrids partition(dx, dy, particles_a.rv[j].x, particles_a.rv[j].y); //linear interpolation //ec scheme

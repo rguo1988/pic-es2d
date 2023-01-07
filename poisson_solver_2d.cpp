@@ -101,7 +101,7 @@ void PoissonSolver2D_DirichletBC::Solve(MatrixXd charge)
     phi.block(1, 1, nx - 2, ny - 2) = phi_vec.reshaped(nx - 2, ny - 2).eval();
 
     //Calculate E
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int x_idx = 0; x_idx < nx; x_idx++)
     {
         for(int y_idx = 0; y_idx < ny; y_idx++)
@@ -214,7 +214,7 @@ void PoissonSolver2D_PeriodicBC::Solve(MatrixXd charge)
     phi.row(nx - 1) = phi.row(0);
 
     //Calculate E
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int x_idx = 0; x_idx < nx; x_idx++)
     {
         for(int y_idx = 0; y_idx < ny; y_idx++)
@@ -322,7 +322,7 @@ void PoissonSolver2D_XPeriodic_YDirichletBC::Solve(MatrixXd charge)
     phi.row(nx - 1) = phi.row(0);
 
     //Calculate E
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int x_idx = 0; x_idx < nx; x_idx++)
     {
         for(int y_idx = 0; y_idx < ny; y_idx++)

@@ -32,15 +32,15 @@ void Particles::InitializeXV_Random(double (*Distribution)(double, double, doubl
     //r = gsl_rng_alloc(gsl_rng_default);
     default_random_engine e;
     uniform_real_distribution<double> uniform_dist(0.0, 1.0);
-    e.seed(chrono::system_clock::now().time_since_epoch().count());
+    //e.seed(chrono::system_clock::now().time_since_epoch().count());
 
     //initialize particles
     double max_probability_density = Distribution(0.0, 0.0, 0.0, 0.0);
-    //#pragma omp parallel firstprivate(e)
+    #pragma omp parallel firstprivate(e)
     {
-        //e.seed(chrono::system_clock::now().time_since_epoch().count() + omp_get_thread_num());
+        e.seed(chrono::system_clock::now().time_since_epoch().count() + omp_get_thread_num());
 
-        //#pragma omp for
+        #pragma omp for
         for(int i = 0; i < num; i++)
         {
             //double temp_vx = gsl_rng_uniform(r) * 2 * v_max - v_max;
