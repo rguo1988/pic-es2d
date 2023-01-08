@@ -227,7 +227,7 @@ void PlasmaSystem::SetupSpeciesChargeOnGrids()
             for(int i = 0; i < 4; i++)
             {
                 //calculate charge density on grids
-                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy; 
+                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy;
             }
         }
     }
