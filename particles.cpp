@@ -24,7 +24,7 @@ Particles::Particles(double _n, double _q, double _m, string _name):
 void Particles::InitializeXV_Random(double (*Distribution)(double, double, double, double), double v_max, double Lx, double Ly)
 {
     cout << "--------------------------------------------" << endl;
-    cout << "  Initializing " << name << "..." << endl;
+    cout << "  Initializing " << name << "...";
 
     //set random number
     //gsl_rng_default_seed = ((unsigned long)(time(NULL)));

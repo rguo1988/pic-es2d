@@ -75,10 +75,10 @@ void PlasmaSystem::Run()
                 string filenameX = data_path + particles_a.name + "_x_data" + p;
                 string filenameY = data_path + particles_a.name + "_y_data" + p;
                 //output particles x v
-                //OutputData(filenameVX, GetParticlesVX(particles_a));
-                //OutputData(filenameVY, GetParticlesVY(particles_a));
-                //OutputData(filenameX,  GetParticlesX(particles_a));
-                //OutputData(filenameY,  GetParticlesY(particles_a));
+                OutputData(filenameVX, GetParticlesVX(particles_a));
+                OutputData(filenameVY, GetParticlesVY(particles_a));
+                OutputData(filenameX,  GetParticlesX(particles_a));
+                OutputData(filenameY,  GetParticlesY(particles_a));
             }
         }
 
@@ -137,7 +137,6 @@ void PlasmaSystem::Run()
                 }
             }
         }
-
         //diagnose energy
         CalculateE();
     }
@@ -191,7 +190,6 @@ void PlasmaSystem::PrintParameters() const
         cout << "  Evolving from a CONTINUED state!" << endl;
     cout << "  data_num = " << data_num << endl;
     cout << "--------------------------------------------" << endl;
-
 }
 
 void PlasmaSystem::CalcNeutralBackgroundOnGrids()
