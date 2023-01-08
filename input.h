@@ -44,7 +44,7 @@ class Input
     const double lambda_D = sqrt(T_e);
 
     //time parameters
-    const int maxsteps = 200;
+    const int maxsteps = 100;
     const int time_ran = 0;
     const double timestep_condition = 0.1;
     //const double dt = timestep_condition / w_p;

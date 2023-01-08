@@ -43,6 +43,7 @@ PlasmaSystem::PlasmaSystem():
     Ep.clear();
     Et.clear();
     charge.resize(nx, ny);
+    charge_background.resize(nx, ny);
 }
 
 void PlasmaSystem::Run()
@@ -50,6 +51,7 @@ void PlasmaSystem::Run()
     Initialize();
     PrintParameters();
     PrintSpecialInformation();
+    CalcNeutralBackgroundOnGrids();
 
     //main loop
     for(int n = 0; n < maxsteps + 1; n++)
@@ -80,10 +82,11 @@ void PlasmaSystem::Run()
             }
         }
 
-        //calculate E
+        //calculate E field
         charge.setZero();
         SetupSpeciesChargeOnGrids();
-        SetupBackgroundChargeOnGrids();
+        //add neutral background charge density
+        charge += charge_background;
         poisson_solver.Solve(charge);
 
         //Push One Step
@@ -191,7 +194,7 @@ void PlasmaSystem::PrintParameters() const
 
 }
 
-void PlasmaSystem::SetupBackgroundChargeOnGrids()
+void PlasmaSystem::CalcNeutralBackgroundOnGrids()
 {
     double net_charge = 0.0;
     for(auto p : species)
@@ -210,7 +213,7 @@ void PlasmaSystem::SetupBackgroundChargeOnGrids()
             normalization += temp_rho(i, j);
         }
     }
-    charge -= net_charge * temp_rho / dx / dy / normalization;
+    charge_background = -net_charge * temp_rho / dx / dy / normalization;
 }
 
 void PlasmaSystem::SetupSpeciesChargeOnGrids()
@@ -223,10 +226,12 @@ void PlasmaSystem::SetupSpeciesChargeOnGrids()
             PartitionToGrids partition(dx, dy, p.rv[i].x, p.rv[i].y); //linear interpolation //ec scheme
             for(int i = 0; i < 4; i++)
             {
-                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy; // charge is density of charge
+                //calculate charge density on grids
+                charge(partition.x_idx[i], partition.y_idx[i]) += p.q * partition.contrib[i] / dx / dy; 
             }
         }
     }
+    //periodic boundary condition
     charge.col(0) += charge.col(ny - 1);
     charge.col(ny - 1) = charge.col(0);
     charge.row(0) += charge.row(nx - 1);

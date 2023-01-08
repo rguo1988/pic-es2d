@@ -18,6 +18,7 @@ class PlasmaSystem: public Input
     PoissonSolver2D_PeriodicBC poisson_solver;
     ConstMagneticField B;
     MatrixXd charge;
+    MatrixXd charge_background;
 
     vector<double> Ek;
     vector<double> Ep;
@@ -35,7 +36,7 @@ class PlasmaSystem: public Input
 
     //Setup Charge
     void SetupSpeciesChargeOnGrids();
-    void SetupBackgroundChargeOnGrids();
+    void CalcNeutralBackgroundOnGrids();
 
     void Run();
 
