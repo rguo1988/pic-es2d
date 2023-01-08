@@ -15,7 +15,7 @@ class Input
     const bool if_continued = 0;
 
     //simulation box
-    static constexpr double kx = 1.0;
+    static constexpr double kx = 1.1;
     static constexpr double ky = 1.0;
     static constexpr double Lx = 2.0 * M_PI / kx;
     static constexpr double Ly = 2.0 * M_PI / ky;
@@ -24,7 +24,7 @@ class Input
     const double vy_width = 2.0 * v_max;
 
     static const int nx = 256;
-    static const int ny = 256;
+    static const int ny = 64;
     static const int nx_grids = nx - 1;
     static const int ny_grids = ny - 1;
     const double dx = Lx / nx_grids;
@@ -32,7 +32,7 @@ class Input
 
     //speices
     static constexpr double m_e = 1.0;
-    static constexpr double NePerCell = 100;
+    static constexpr double NePerCell = 500;
     static constexpr double T_e = 1;
     const double N_e = NePerCell * nx_grids * ny_grids;
     const double n_e_aver = N_e / Lx / Ly;
@@ -41,7 +41,7 @@ class Input
     const double lambda_De = sqrt(T_e);
 
     static constexpr double m_i = 100.0;
-    static constexpr double NiPerCell = 100;
+    static constexpr double NiPerCell = 500;
     static constexpr double T_i = 1;
     const double N_i = NiPerCell * nx_grids * ny_grids;
     const double n_i_aver = N_i / Lx / Ly;
@@ -55,14 +55,14 @@ class Input
     const double lambda_D = 1.0 / sqrt(1.0 / T_e + 1.0 / T_i);
 
     //time parameters
-    const int maxsteps = 200;
+    const int maxsteps = 600;
     const int time_ran = 0;
     const double timestep_condition = 0.1;
     //const double dt = timestep_condition / w_p;
     const double dt = 0.1;
 
     //special settings
-    static constexpr double d = 0.1;
+    static constexpr double d = 0.3;
 
     //data path
     const string data_path = "./data/";
@@ -96,7 +96,7 @@ class Input
         Particles electrons(N_e, q_e, m_e, "electrons");
         Particles ions(N_i, q_i, m_i, "ions");
         electrons.InitializeXV_Random(GetElecInitDistrib, v_max, Lx, Ly);
-        ions.InitializeXV_Random(GetIonInitDistrib, v_max/10, Lx, Ly);
+        ions.InitializeXV_Random(GetIonInitDistrib, v_max, Lx, Ly);
         species.push_back(electrons);
         species.push_back(ions);
     }
