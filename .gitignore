@@ -2,7 +2,6 @@
 *.out
 pic
 /data
-/results
 *.swp
 *~
 .ipynb_checkpoints/
